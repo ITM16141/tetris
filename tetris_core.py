@@ -92,6 +92,15 @@ class Renderer:
                      Config.BLOCK_SIZE),
                     0
                 )
+                pygame.draw.rect(
+                    self.screen,
+                    [i / 1.25 for i in grid[y][x]],
+                    ((Config.WIDTH - Config.PLAY_W) // 2 + x * Config.BLOCK_SIZE,
+                     (Config.HEIGHT - Config.PLAY_H) // 2 + y * Config.BLOCK_SIZE,
+                     Config.BLOCK_SIZE,
+                     Config.BLOCK_SIZE),
+                    1
+                )
 
         pygame.draw.rect(
             self.screen,
@@ -110,11 +119,20 @@ class Renderer:
                     self.screen,
                     piece.color,
                     (
-                        (Config.WIDTH - Config.PLAY_W)//2 + x * Config.BLOCK_SIZE,
-                        (Config.HEIGHT - Config.PLAY_H)//2 + y * Config.BLOCK_SIZE,
+                        (Config.WIDTH - Config.PLAY_W) // 2 + x * Config.BLOCK_SIZE,
+                        (Config.HEIGHT - Config.PLAY_H) // 2 + y * Config.BLOCK_SIZE,
                         Config.BLOCK_SIZE,
                         Config.BLOCK_SIZE
                     )
+                )
+                pygame.draw.rect(
+                    self.screen,
+                    [i / 1.25 for i in piece.color],
+                    ((Config.WIDTH - Config.PLAY_W) // 2 + x * Config.BLOCK_SIZE,
+                     (Config.HEIGHT - Config.PLAY_H) // 2 + y * Config.BLOCK_SIZE,
+                     Config.BLOCK_SIZE,
+                     Config.BLOCK_SIZE),
+                    1
                 )
 
     def draw_ghost_piece(self, piece, ghost_cells):
@@ -144,6 +162,17 @@ class Renderer:
                     ),
                     0
                 )
+                pygame.draw.rect(
+                    self.screen,
+                    [i / 1.25 for i in next_piece.color],
+                    (
+                        Config.WIDTH - 150 + x * Config.BLOCK_SIZE,
+                        80 + y * Config.BLOCK_SIZE,
+                        Config.BLOCK_SIZE,
+                        Config.BLOCK_SIZE
+                    ),
+                    1
+                )
 
     def draw_hold_piece(self, hold_piece):
         if hold_piece:
@@ -161,6 +190,17 @@ class Renderer:
                         Config.BLOCK_SIZE
                     ),
                     0
+                )
+                pygame.draw.rect(
+                    self.screen,
+                    [i / 1.25 for i in hold_piece.color],
+                    (
+                        50 + x * Config.BLOCK_SIZE,
+                        80 + y * Config.BLOCK_SIZE,
+                        Config.BLOCK_SIZE,
+                        Config.BLOCK_SIZE
+                    ),
+                    1
                 )
 
 class Board:
