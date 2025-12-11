@@ -1,6 +1,7 @@
 import socket, threading, pygame, os, sys, json, uuid
 
-from tetris_core import Game, Config
+from tetris_core import Game, Config, Board
+
 
 def load_config():
     base_path = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -70,45 +71,38 @@ class NetworkGame(Game):
         screen_width, screen_height = self.screen.get_size()
         Config.update_window_size(screen_width, screen_height)
 
-        center_x = (Config.WIDTH - Config.PLAY_W) // 2
-        center_y = (Config.HEIGHT - Config.PLAY_H) // 2
+        if len(self.opponents) > 0:
+            opponents_list = list(self.opponents.items())
+            half = len(opponents_list) // 2
+            left_players = opponents_list[:half]
+            right_players = opponents_list[half:]
 
-        font = pygame.font.SysFont("consolas", 20)
-        self.screen.blit(
-            font.render(f"{self.player_name} | Score: {self.score}", True, (255, 255, 255)),
-            (center_x, center_y - 30)
-        )
+            scale = 0.3
+            block = int(Config.BLOCK_SIZE * scale)
+            slot_w = block * Config.COLS
+            slot_h = block * Config.ROWS
+            margin = 10
 
-        num_opponents = len(self.opponents)
-        if num_opponents > 0:
-            scale_x = screen_width / (Config.PLAY_W * (num_opponents + 1)) / 2
-            scale_y = screen_height / (Config.PLAY_H * (num_opponents + 1)) / 2
-            scale = min(1.0, scale_x, scale_y)
-            font_size = max(14, int(20 * scale))
-            font = pygame.font.SysFont("consolas", font_size)
+            center_x = (Config.WIDTH - Config.PLAY_W) // 2
+            center_y = (Config.HEIGHT - Config.PLAY_H) // 2
 
-            cols = max(1, screen_width // (Config.PLAY_W + 100))
-            for i, state in enumerate(self.opponents.values()):
-                row = i // cols
-                col = i % cols
-                offset_x = col * (Config.PLAY_W + 100) + 50
-                offset_y = row * (Config.PLAY_H + 100) + 200
-
-                name = state.get("name", "Opponent")
-                score = state.get("score", 0)
-                self.screen.blit(
-                    font.render(f"{name} | Score: {score}", True, (255, 255, 255)),
-                    (offset_x, offset_y - 30)
+            for i, (pid, opp) in enumerate(left_players):
+                slot_x = center_x - slot_w - 50
+                slot_y = center_y + i * (slot_h + margin)
+                opp_grid = Board(opp["locked"]).create_grid()
+                self.renderer.draw_opponent_grid(opp_grid, slot_x, slot_y, scale)
+                self.renderer.draw_opponent_info(
+                    opp["name"], opp["score"], slot_x, slot_y
                 )
 
-                for (x, y), color in state["locked"]:
-                    rect = pygame.Rect(
-                        offset_x + int(x * Config.BLOCK_SIZE * scale),
-                        offset_y + int(y * Config.BLOCK_SIZE * scale),
-                        int(Config.BLOCK_SIZE * scale),
-                        int(Config.BLOCK_SIZE * scale)
-                    )
-                    pygame.draw.rect(self.screen, color, rect)
+            for i, (pid, opp) in enumerate(right_players):
+                slot_x = center_x + Config.PLAY_W + 50
+                slot_y = center_y + i * (slot_h + margin)
+                opp_grid = Board(opp["locked"]).create_grid()
+                self.renderer.draw_opponent_grid(opp_grid, slot_x, slot_y, scale)
+                self.renderer.draw_opponent_info(
+                    opp["name"], opp["score"], slot_x, slot_y
+                )
 
         pygame.display.flip()
 

@@ -146,10 +146,10 @@ class Renderer:
             pygame.draw.rect(self.screen, piece.color, rect, 1)
 
     def draw_next_piece(self, next_piece):
+        font = pygame.font.SysFont("consolas", 20)
+        label = font.render("Next:", True, (255, 255, 255))
+        self.screen.blit(label, (Config.WIDTH - 150, 50))
         if next_piece:
-            font = pygame.font.SysFont("consolas", 20)
-            label = font.render("Next:", True, (255,255,255))
-            self.screen.blit(label, (Config.WIDTH - 150, 50))
             for (x, y) in next_piece.cells():
                 pygame.draw.rect(
                     self.screen,
@@ -175,10 +175,10 @@ class Renderer:
                 )
 
     def draw_hold_piece(self, hold_piece):
+        font = pygame.font.SysFont("consolas", 20)
+        label = font.render("Hold:", True, (255, 255, 255))
+        self.screen.blit(label, (50, 50))
         if hold_piece:
-            font = pygame.font.SysFont("consolas", 20)
-            label = font.render("Hold:", True, (255,255,255))
-            self.screen.blit(label, (50, 50))
             for (x, y) in hold_piece.cells():
                 pygame.draw.rect(
                     self.screen,
@@ -203,9 +203,33 @@ class Renderer:
                     1
                 )
 
+    def draw_opponent_grid(self, grid, x, y, scale=0.3):
+        block = int(Config.BLOCK_SIZE * scale)
+        for row in range(Config.ROWS):
+            for col in range(Config.COLS):
+                pygame.draw.rect(
+                    self.screen,
+                    grid[row][col],
+                    (x + col * block, y + row * block, block, block),
+                    0
+                )
+        pygame.draw.rect(
+            self.screen,
+            (200, 200, 200),
+            (x, y, Config.COLS * block, Config.ROWS * block),
+            2
+        )
+
+    def draw_opponent_info(self, name, score, x, y):
+        font = pygame.font.SysFont("consolas", 18)
+        text = font.render(f"{name} ({score})", True, (255, 255, 255))
+        self.screen.blit(text, (x, y - 22))
+
 class Board:
-    def __init__(self):
-        self.locked = {}
+    def __init__(self, locked=None):
+        if locked is None:
+            locked = {}
+        self.locked = locked
 
     def create_grid(self):
         grid = [[(0, 0, 0) for _ in range(Config.COLS)] for _ in range(Config.ROWS)]
