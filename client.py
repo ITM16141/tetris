@@ -1,4 +1,4 @@
-import socket, threading, pygame, os, sys, json, uuid
+import socket, threading, pygame, os, sys, json, uuid, random
 
 from tetris_core import Game, Config, Board
 
@@ -19,43 +19,73 @@ class NetworkGame(Game):
         self.opponents = {}
         threading.Thread(target=self.receive, daemon=True).start()
 
-    def send_state(self, garbage=0):
+    def send_board_state(self):
         state = {
+            "type": "board",
             "id": self.player_id,
             "name": self.player_name,
-            "locked": list(self.board.locked.items()),
             "score": self.score,
-            "piece": self.current_piece.shape,
-            "garbage": garbage
+            "locked": list(self.board.locked.items()),
+            "piece": self.current_piece.shape
         }
-        self.sock.sendall(json.dumps(state).encode())
+        self.sock.sendall((json.dumps(state) + "\n").encode())
+
+    def send_garbage(self, target_id, amount):
+        state = {
+            "type": "garbage",
+            "from": self.player_id,
+            "to": target_id,
+            "amount": amount
+        }
+        self.sock.sendall((json.dumps(state) + "\n").encode())
+
+    def send_garbage_to_random(self, amount):
+        if amount <= 0:
+            return
+
+        candidates = [pid for pid in self.opponents.keys() if pid != self.player_id]
+        if not candidates:
+            return
+
+        target = random.choice(candidates)
+        self.send_garbage(target, amount)
 
     def receive(self):
+        buffer = ""
+
         while True:
             try:
                 data = self.sock.recv(4096)
                 if not data:
                     break
 
-                state = json.loads(data.decode())
-                sender_id = state.get("id")
+                buffer += data.decode()
 
-                if sender_id != self.player_id and state.get("garbage", 0) > 0:
-                    self.board.add_garbage_lines(state["garbage"])
+                while "\n" in buffer:
+                    line, buffer = buffer.split("\n", 1)
+                    if not line.strip():
+                        continue
 
-                locked_list = state.get("locked", [])
-                locked_dict = {
-                    (pos[0], pos[1]): tuple(color)
-                    for pos, color in locked_list
-                }
+                    state = json.loads(line)
+                    msg_type = state.get("type")
 
-                self.opponents[sender_id] = {
-                    "name": state.get("name", ""),
-                    "score": state.get("score", 0),
-                    "locked": locked_dict,
-                    "piece": state.get("piece"),
-                    "garbage": state.get("garbage", 0)
-                }
+                    if msg_type == "board":
+                        pid = state["id"]
+                        if pid != self.player_id:
+                            locked_dict = {
+                                (pos[0], pos[1]): tuple(color)
+                                for pos, color in state["locked"]
+                            }
+                            self.opponents[pid] = {
+                                "name": state["name"],
+                                "score": state["score"],
+                                "locked": locked_dict,
+                                "piece": state["piece"]
+                            }
+
+                    elif msg_type == "garbage":
+                        if state["to"] == self.player_id:
+                            self.board.add_garbage_lines(state["amount"])
 
             except Exception as e:
                 print("Receive error:", e)
@@ -66,11 +96,12 @@ class NetworkGame(Game):
             self.current_piece.y += 1
         else:
             self.board.lock_piece(self.current_piece)
+            self.send_board_state()
             lines = self.board.clear_lines()
             self.score += lines * 100
             garbage = max(0, lines - 1)
             self.spawn_piece()
-            self.send_state(garbage)
+            self.send_garbage_to_random(garbage)
 
     def draw(self):
         self.screen.fill((0, 0, 0))
@@ -174,7 +205,11 @@ def main():
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((host, port))
-    sock.sendall(room.encode())
+    join_msg = {
+        "type": "join",
+        "room": room
+    }
+    sock.sendall((json.dumps(join_msg) + "\n").encode())
 
     info = pygame.display.Info()
     screen_width, screen_height = info.current_w, info.current_h
@@ -185,6 +220,7 @@ def main():
     player_name = get_player_name(screen)
 
     game = NetworkGame(sock, player_id, player_name, screen)
+    game.send_board_state()
     fall_time = 0
     fall_speed = 0.8
 
