@@ -87,9 +87,21 @@ def handle_client(conn, addr):
 
     print(f"[disconnect] {addr} removed from room {room_id}")
 
-def main():
-    print(f"[start] server on {HOST}:{PORT}")
+def get_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # 宛先は実在しなくてよい（接続は発生しない）
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
+    except:
+        return "127.0.0.1"
+    finally:
+        s.close()
 
+def main():
+    local_ip = get_local_ip()
+    print(f"[start] server starting on {local_ip}:{PORT}")
+    print(f"[info] connect from other devices using: {local_ip}:{PORT}")
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_sock:
         server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_sock.bind((HOST, PORT))
