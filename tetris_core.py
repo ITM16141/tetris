@@ -68,12 +68,15 @@ class Game:
         self.screen.fill((0,0,0))
         grid = self.board.create_grid()
         self.renderer.draw_grid(grid)
+        self.renderer.draw_player_info("", self.score)
         if not self.game_over:
             ghost_cells = self.get_ghost_cells()
             self.renderer.draw_ghost_piece(self.current_piece, ghost_cells)
             self.renderer.draw_piece(self.current_piece)
             self.renderer.draw_next_piece(self.next_piece)
             self.renderer.draw_hold_piece(self.hold_piece)
+        screen_width, screen_height = self.screen.get_size()
+        Config.update_window_size(screen_width, screen_height)
         pygame.display.flip()
 
 class Renderer:
@@ -203,6 +206,13 @@ class Renderer:
                     1
                 )
 
+    def draw_player_info(self, name, score):
+        font = pygame.font.SysFont("consolas", 24)
+        text = font.render(f"{name}  Score: {score}", True, (255, 255, 255))
+        x = Config.WIDTH // 2 - text.get_width() // 2
+        y = (Config.HEIGHT - Config.PLAY_H) // 2 - 40
+        self.screen.blit(text, (x, y))
+
     def draw_opponent_grid(self, grid, x, y, scale=0.3):
         block = int(Config.BLOCK_SIZE * scale)
         for row in range(Config.ROWS):
@@ -212,6 +222,12 @@ class Renderer:
                     grid[row][col],
                     (x + col * block, y + row * block, block, block),
                     0
+                )
+                pygame.draw.rect(
+                    self.screen,
+                    [i / 1.25 for i in grid[row][col]],
+                    (x + col * block, y + row * block, block, block),
+                    1
                 )
         pygame.draw.rect(
             self.screen,

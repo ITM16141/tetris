@@ -36,12 +36,29 @@ class NetworkGame(Game):
                 data = self.sock.recv(4096)
                 if not data:
                     break
+
                 state = json.loads(data.decode())
                 sender_id = state.get("id")
+
                 if sender_id != self.player_id and state.get("garbage", 0) > 0:
                     self.board.add_garbage_lines(state["garbage"])
-                self.opponents[sender_id] = state
-            except:
+
+                locked_list = state.get("locked", [])
+                locked_dict = {
+                    (pos[0], pos[1]): tuple(color)
+                    for pos, color in locked_list
+                }
+
+                self.opponents[sender_id] = {
+                    "name": state.get("name", ""),
+                    "score": state.get("score", 0),
+                    "locked": locked_dict,
+                    "piece": state.get("piece"),
+                    "garbage": state.get("garbage", 0)
+                }
+
+            except Exception as e:
+                print("Receive error:", e)
                 break
 
     def update(self):
@@ -60,6 +77,8 @@ class NetworkGame(Game):
 
         grid = self.board.create_grid()
         self.renderer.draw_grid(grid)
+
+        self.renderer.draw_player_info(self.player_name, self.score)
 
         if not self.game_over:
             ghost_cells = self.get_ghost_cells()
