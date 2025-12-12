@@ -41,8 +41,6 @@ def handle_client(conn, addr):
             if not data:
                 break
 
-            print(f"[recv raw] {addr}: {data!r}")  # デバッグ用
-
             buffer += data.decode()
 
             while "\n" in buffer:
