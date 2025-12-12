@@ -1,5 +1,5 @@
 {
-  "HOST": "localhost",
+  "HOST": "tetris-igak.onrender.com",
   "PORT": 50007,
   "ROOM": "room1"
 }
