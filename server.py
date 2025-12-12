@@ -40,42 +40,29 @@ def handle_client(conn, addr):
         try:
             data = conn.recv(4096)
             if not data:
-                print(f"[disconnect] {addr} closed connection")
                 break
 
-            try:
-                buffer += data.decode()
+            buffer += data.decode()
 
-                while "\n" in buffer:
-                    line, buffer = buffer.split("\n", 1)
-                    if not line.strip():
-                        continue
+            while "\n" in buffer:
+                line, buffer = buffer.split("\n", 1)
+                if not line.strip():
+                    continue
 
-                    msg = json.loads(line)
+                msg = json.loads(line)
 
-            except Exception:
-                print(f"[error] invalid JSON from {addr}")
-                continue
+                if msg.get("type") == "join":
+                    room_id = msg["room"]
+                    with rooms_lock:
+                        rooms.setdefault(room_id, []).append(conn)
+                    print(f"[room] {addr} joined room {room_id}")
+                    continue
 
-            if msg.get("type") == "join":
-                room_id = msg.get("room")
                 if room_id is None:
-                    print(f"[error] no room specified by {addr}")
-                    break
+                    print(f"[warn] {addr} sent message before join")
+                    continue
 
-                with rooms_lock:
-                    if room_id not in rooms:
-                        rooms[room_id] = []
-                    rooms[room_id].append(conn)
-
-                print(f"[room] {addr} joined room {room_id}")
-                continue
-
-            if room_id is None:
-                print(f"[warn] {addr} sent message before join")
-                continue
-
-            broadcast_to_room(room_id, data, sender_conn=conn)
+                broadcast_to_room(room_id, line.encode(), sender_conn=conn)
 
         except ConnectionResetError:
             print(f"[disconnect] {addr} forcibly closed")
@@ -84,6 +71,7 @@ def handle_client(conn, addr):
         except Exception as e:
             print(f"[error] from {addr}: {e}")
             break
+
     try:
         conn.close()
     except:
