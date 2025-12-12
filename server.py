@@ -101,9 +101,14 @@ def get_local_ip():
 def main():
     local_ip = get_local_ip()
     print(f"[start] server starting on {local_ip}:{PORT}")
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_sock:
+
+    addrinfo = socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC, socket.SOCK_STREAM)
+
+    af, socktype, proto, canonname, sa = addrinfo[0]
+
+    with socket.socket(af, socktype, proto) as server_sock:
         server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server_sock.bind((HOST, PORT))
+        server_sock.bind(sa)
         server_sock.listen()
 
         print("[ready] waiting for connections...")
