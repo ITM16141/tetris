@@ -100,7 +100,6 @@ def get_local_ip():
 def main():
     local_ip = get_local_ip()
     print(f"[start] server starting on {local_ip}:{PORT}")
-    print(f"[info] connect from other devices using: {local_ip}:{PORT}")
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_sock:
         server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_sock.bind((HOST, PORT))
