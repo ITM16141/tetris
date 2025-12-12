@@ -1,9 +1,10 @@
 import socket
 import threading
 import json
+import os
 
 HOST = "0.0.0.0"
-PORT = 50007
+PORT = os.environ.get("PORT", 50007)
 
 rooms = {}
 rooms_lock = threading.Lock()
