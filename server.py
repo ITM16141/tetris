@@ -34,6 +34,8 @@ def handle_client(conn, addr):
 
     room_id = None
 
+    buffer = ""
+
     while True:
         try:
             data = conn.recv(4096)
@@ -42,7 +44,15 @@ def handle_client(conn, addr):
                 break
 
             try:
-                msg = json.loads(data.decode())
+                buffer += data.decode()
+
+                while "\n" in buffer:
+                    line, buffer = buffer.split("\n", 1)
+                    if not line.strip():
+                        continue
+
+                    msg = json.loads(line)
+
             except Exception:
                 print(f"[error] invalid JSON from {addr}")
                 continue
