@@ -33,7 +33,6 @@ def handle_client(conn, addr):
     print(f"[connect] {addr} connected")
 
     room_id = None
-
     buffer = ""
 
     while True:
@@ -42,6 +41,8 @@ def handle_client(conn, addr):
             if not data:
                 break
 
+            print(f"[recv raw] {addr}: {data!r}")  # デバッグ用
+
             buffer += data.decode()
 
             while "\n" in buffer:
@@ -49,10 +50,17 @@ def handle_client(conn, addr):
                 if not line.strip():
                     continue
 
-                msg = json.loads(line)
+                try:
+                    msg = json.loads(line)
+                except json.JSONDecodeError:
+                    print(f"[error] invalid JSON line from {addr}: {line!r}")
+                    continue
 
                 if msg.get("type") == "join":
-                    room_id = msg["room"]
+                    room_id = msg.get("room")
+                    if room_id is None:
+                        print(f"[error] no room specified by {addr}")
+                        continue
                     with rooms_lock:
                         rooms.setdefault(room_id, []).append(conn)
                     print(f"[room] {addr} joined room {room_id}")
